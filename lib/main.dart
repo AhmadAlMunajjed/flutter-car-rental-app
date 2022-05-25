@@ -1,38 +1,30 @@
+import 'package:car_rental_app_ui/data/themes_data.dart';
+import 'package:car_rental_app_ui/pages/home_page.dart';
 import 'package:flutter/material.dart';
-import 'login_page.dart';
-import 'home_page.dart';
-import 'register_page.dart';
+import 'package:get/get.dart';
 
-void main() => runApp(MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(const App());
+}
 
-class MyApp extends StatelessWidget {
-  final routes = <String, WidgetBuilder>{
-    LoginPage.tag: (context) => LoginPage(),
-    HomePage.tag: (context) => HomePage(),
-    RegisterPage.tag: (context) => RegisterPage(),
-  };
+class App extends StatefulWidget {
+  const App({Key? key}) : super(key: key);
+  @override
+  _AppState createState() => _AppState();
+}
 
+class _AppState extends State<App> {
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        FocusScope.of(context).requestFocus(new FocusNode());
-      },
-      child: MaterialApp(
-          title: 'Flutter Demo',
-          theme: ThemeData(
-            primarySwatch: Colors.blue,
-          ),
-          home: MaterialApp(
-            title: 'Login',
-            debugShowCheckedModeBanner: false,
-            theme: ThemeData(
-              primarySwatch: Colors.lightBlue,
-              fontFamily: 'Nunito',
-            ),
-            home: LoginPage(),
-            routes: routes,
-          )),
+    return GetMaterialApp(
+      defaultTransition: Transition.rightToLeft,
+      transitionDuration: const Duration(milliseconds: 500),
+      debugShowCheckedModeBanner: false,
+      title: 'Car Rental App',
+      home: const HomePage(),
+      theme: lightModeTheme,
+      darkTheme: darkModeTheme,
     );
   }
 }
