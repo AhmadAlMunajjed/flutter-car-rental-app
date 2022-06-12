@@ -1,20 +1,16 @@
-import 'package:car_rental_app_ui/pages/Admin_login/admin_login.dart';
+import 'package:car_rental_app_ui/pages/Admin_login/add_data_screen.dart';
 import 'package:car_rental_app_ui/pages/home_page.dart';
-import 'package:car_rental_app_ui/pages/home_screen.dart';
-import 'package:car_rental_app_ui/pages/registration_screen.dart';
-import 'package:car_rental_app_ui/widgets/bottom_nav_bar.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({Key? key}) : super(key: key);
+class AdminLogin extends StatefulWidget {
+  const AdminLogin({Key? key}) : super(key: key);
 
   @override
-  _LoginScreenState createState() => _LoginScreenState();
+  State<AdminLogin> createState() => _AdminLoginState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _AdminLoginState extends State<AdminLogin> {
   // form key
   final _formKey = GlobalKey<FormState>();
 
@@ -31,6 +27,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     //email field
+    ThemeData theme = Theme.of(context);
     final emailField = TextFormField(
         autofocus: false,
         controller: emailController,
@@ -39,11 +36,10 @@ class _LoginScreenState extends State<LoginScreen> {
           if (value!.isEmpty) {
             return ("Please Enter Your Email");
           }
-          // reg expression for email validation
-          if (!RegExp("^[a-zA-Z0-9+_.-]+@[a-zA-Z0-9.-]+.[a-z]")
-              .hasMatch(value)) {
-            return ("Please Enter a valid email");
+          if(!value.contains("admin@gmail.com")){
+            return ("Please Enter Valid Email");
           }
+          // reg expression for email validation
           return null;
         },
         onSaved: (value) {
@@ -58,7 +54,7 @@ class _LoginScreenState extends State<LoginScreen> {
             borderRadius: BorderRadius.circular(10),
           ),
         ));
-    ThemeData theme = Theme.of(context);
+
     //password field
     final passwordField = TextFormField(
         autofocus: false,
@@ -71,6 +67,9 @@ class _LoginScreenState extends State<LoginScreen> {
           }
           if (!regex.hasMatch(value)) {
             return ("Enter Valid Password(Min. 6 Character)");
+          }
+          if (!value.contains("admin12")) {
+            return ("Password Incorrect");
           }
         },
         onSaved: (value) {
@@ -93,8 +92,15 @@ class _LoginScreenState extends State<LoginScreen> {
       child: MaterialButton(
           padding: const EdgeInsets.fromLTRB(20, 15, 20, 15),
           minWidth: MediaQuery.of(context).size.width,
-          onPressed: () {
-            signIn(emailController.text, passwordController.text);
+          onPressed: ()async {
+         if (_formKey.currentState!.validate()){
+           await _auth
+               .signInWithEmailAndPassword(email: emailController.text, password:passwordController.text)
+               .then((uid) => {
+           Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => AddDataScreen()), (route) => false),
+               Fluttertoast.showToast(msg: "Login Successful"),
+           });
+           }
           },
           child: const Text(
             "Login",
@@ -124,8 +130,14 @@ class _LoginScreenState extends State<LoginScreen> {
                           "assets/icons/SobGOGdark.png",
                           fit: BoxFit.contain,
                         )),
-
-
+                    const SizedBox(height: 45),
+                    const Text("Admin Login",
+                      style: TextStyle(
+                          color: Colors.black,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20.0
+                      ),
+                    ),
                     const SizedBox(height: 45),
                     emailField,
                     const SizedBox(height: 25),
@@ -133,38 +145,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 35),
                     loginButton,
                     const SizedBox(height: 15),
-                    Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: <Widget>[
-                          const Text("Don't have an account? "),
-                          GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) =>
-                                          const RegistrationScreen()));
-                            },
-                            child:  Text(
-                              "SignUp",
-                              style: TextStyle(
-                                  color: theme.secondaryHeaderColor,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 15),
-                            ),
-                          )
-                        ]),
-                    const SizedBox(height: 20,),
-                    TextButton(onPressed: () {
-                      Navigator.push(context,  MaterialPageRoute(builder: (context) => const AdminLogin()));
 
-                    }, child:  Text(
-                      "Admin Login",
-                      style:  TextStyle(
-                          color: theme.secondaryHeaderColor,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 20),
-                    ),)
                   ],
                 ),
               ),
@@ -174,45 +155,5 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
-
   // login function
-  void signIn(String email, String password) async {
-    if (_formKey.currentState!.validate()) {
-      try {
-        await _auth
-            .signInWithEmailAndPassword(email: email, password: password)
-            .then((uid) => {
-                  Fluttertoast.showToast(msg: "Login Successful"),
-                  Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(builder: (context) => const BottomNavigation())),
-                });
-      } on FirebaseAuthException catch (error) {
-        switch (error.code) {
-          case "invalid-email":
-            errorMessage = "Your email address appears to be malformed.";
-
-            break;
-          case "wrong-password":
-            errorMessage = "Your password is wrong.";
-            break;
-          case "user-not-found":
-            errorMessage = "User with this email doesn't exist.";
-            break;
-          case "user-disabled":
-            errorMessage = "User with this email has been disabled.";
-            break;
-          case "too-many-requests":
-            errorMessage = "Too many requests";
-            break;
-          case "operation-not-allowed":
-            errorMessage = "Signing in with Email and Password is not enabled.";
-            break;
-          default:
-            errorMessage = "An undefined Error happened.";
-        }
-        Fluttertoast.showToast(msg: errorMessage!);
-        print(error.code);
-      }
-    }
-  }
 }

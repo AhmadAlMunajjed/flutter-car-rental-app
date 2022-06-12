@@ -1,3 +1,4 @@
+/*
 //! EXAMPLE CARS
 //TODO: add cars from backend
 List<Map> cars = [
@@ -35,3 +36,4 @@ List<Map> cars = [
     'carRating': '4.8',
   }
 ];
+*/

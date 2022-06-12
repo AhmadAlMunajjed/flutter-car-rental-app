@@ -1,23 +1,30 @@
 import 'dart:math';
 
+import 'package:car_rental_app_ui/pages/select_rent.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:unicons/unicons.dart';
 
 class DetailsPage extends StatefulWidget {
   final String carImage;
+  final String id;
   final String carClass;
   final String carName;
-  final int carPower;
+  final String carPower;
   final String people;
   final String bags;
-  final int carPrice;
+  final String carPrice;
   final String carRating;
-  final bool isRotated;
+  final String locationName;
+  final String city;
 
   const DetailsPage({
     Key? key,
+    required this.id,
     required this.carImage,
     required this.carClass,
     required this.carName,
@@ -26,7 +33,8 @@ class DetailsPage extends StatefulWidget {
     required this.bags,
     required this.carPrice,
     required this.carRating,
-    required this.isRotated,
+    required this.locationName,
+    required this.city,
   }) : super(key: key);
 
   @override
@@ -105,22 +113,14 @@ class _DetailsPageState extends State<DetailsPage> {
                   ListView(
                     physics: const NeverScrollableScrollPhysics(),
                     children: [
-                      widget.isRotated
-                          ? Image.asset(
-                              widget.carImage,
-                              height: size.width * 0.5,
-                              width: size.width * 0.8,
-                              fit: BoxFit.contain,
-                            )
-                          : Transform(
+                   Transform(
                               alignment: Alignment.center,
                               transform: Matrix4.rotationY(pi),
-                              child: Image.asset(
+                              child: Image(image: NetworkImage(
                                 widget.carImage,
-                                height: size.width * 0.5,
+                              ),  height: size.width * 0.5,
                                 width: size.width * 0.8,
-                                fit: BoxFit.contain,
-                              ),
+                                fit: BoxFit.contain,)
                             ),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.start,
@@ -199,14 +199,14 @@ class _DetailsPageState extends State<DetailsPage> {
                             buildStat(
                               UniconsLine.users_alt,
                               'People',
-                              '( ${widget.people} )',
+                              '(1- ${widget.people} )',
                               size,
                               themeData,
                             ),
                             buildStat(
                               UniconsLine.briefcase,
                               'Bags',
-                              '( ${widget.bags} )',
+                              '(1- ${widget.bags} )',
                               size,
                               themeData,
                             ),
@@ -256,7 +256,7 @@ class _DetailsPageState extends State<DetailsPage> {
                                         size: size.height * 0.05,
                                       ),
                                       Text(
-                                        'Katowice Airport',
+                                        widget.city,
                                         textAlign: TextAlign.center,
                                         style: GoogleFonts.poppins(
                                           color: themeData.primaryColor,
@@ -264,20 +264,23 @@ class _DetailsPageState extends State<DetailsPage> {
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
-                                      Text(
-                                        'Wolności 90, 42-625 Pyrzowice',
-                                        textAlign: TextAlign.center,
-                                        style: GoogleFonts.poppins(
-                                          color: themeData.primaryColor
-                                              .withOpacity(0.6),
-                                          fontSize: size.width * 0.032,
-                                          fontWeight: FontWeight.bold,
+                                      Container(
+                                        child: Text(
+                                          widget.locationName,
+                                          overflow: TextOverflow.ellipsis,
+                                          textAlign: TextAlign.center,
+                                          style: GoogleFonts.poppins(
+                                            color: themeData.primaryColor
+                                                .withOpacity(0.6),
+                                            fontSize: size.width * 0.032,
+                                            fontWeight: FontWeight.bold,
+                                          ),
                                         ),
                                       ),
                                     ],
                                   ),
                                 ),
-                                SizedBox(
+                               /* SizedBox(
                                   height: size.height * 0.15,
                                   width: size.width * 0.25,
                                   child: Container(
@@ -299,7 +302,7 @@ class _DetailsPageState extends State<DetailsPage> {
                                       ),
                                     ),
                                   ),
-                                ),
+                                ),*/
                               ],
                             ),
                           ),
@@ -379,41 +382,54 @@ class _DetailsPageState extends State<DetailsPage> {
       ),
     );
   }
-}
-
-Align buildSelectButton(Size size) {
-  return Align(
-    alignment: Alignment.bottomCenter,
-    child: Padding(
-      padding: EdgeInsets.only(
-        bottom: size.height * 0.01,
-      ),
-      child: SizedBox(
-        height: size.height * 0.07,
-        width: size.width,
-        child: InkWell(
-          onTap: () {
-            //TODO: add select action
-          },
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(15),
-              color: const Color(0xff3b22a1),
-            ),
-            child: Align(
-              child: Text(
-                'Select',
-                textAlign: TextAlign.center,
-                style: GoogleFonts.lato(
-                  fontSize: size.height * 0.025,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
+  Align buildSelectButton(Size size) {
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: Padding(
+        padding: EdgeInsets.only(
+          bottom: size.height * 0.01,
+        ),
+        child: SizedBox(
+          height: size.height * 0.07,
+          width: size.width,
+          child: InkWell(
+            onTap: () async{
+                Get.to( SelectRentScreen(
+                  id: widget.id,
+                  carImage: widget.carImage,
+                  carName: widget.carName,
+                  carClass: widget.carClass,
+                  carPower: widget.carPower,
+                  carPrice: widget.carPrice,
+                  city: widget.city,
+                  carRating: widget.carRating,
+                  locationName: widget.locationName,
+                  bags: widget.bags,
+                  people: widget.people,
+                ));
+            },
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(15),
+                color: const Color(0xff3b22a1),
+              ),
+              child: Align(
+                child: Text(
+                  'Select',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.lato(
+                    fontSize: size.height * 0.025,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
                 ),
               ),
             ),
           ),
         ),
       ),
-    ),
-  );
+    );
+  }
 }
+
+
