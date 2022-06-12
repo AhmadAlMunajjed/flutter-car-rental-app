@@ -3,6 +3,8 @@ import 'package:car_rental_app_ui/widgets/bottom_nav_bar.dart';
 import 'package:car_rental_app_ui/widgets/homePage/most_rented.dart';
 import 'package:car_rental_app_ui/widgets/homePage/top_brands.dart';
 import 'package:flutter/material.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:geolocator/geolocator.dart';
 
 import 'package:google_fonts/google_fonts.dart';
 import 'package:unicons/unicons.dart';
@@ -15,6 +17,66 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  bool? serviceEnabled;
+  Position? _position;
+  String name = "";
+  String city = "";
+  @override
+  void initState() {
+    serviceEnabled = true;
+    _determinePosition();
+    super.initState();
+  }
+  Future<Position?> _determinePosition() async {
+
+    LocationPermission permission;
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled!) {
+      return Future.error("Location Services are Disabled!");
+    }
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        return Future.error("Location Permissions are Denied!");
+      }
+    }
+    if (permission == LocationPermission.deniedForever) {
+      return Future.error(
+          "Location Permissions are permanently denied, we cannot Request permission.");
+    }
+    await Geolocator.getCurrentPosition().then((Position position) {
+      setState(() {
+        _position = position;
+      });
+      _getAddressfromLatlang(_position!);
+    });
+  }
+  Future<void> _getAddressfromLatlang(Position position) async {
+    List<Placemark> placemarks =
+    await placemarkFromCoordinates(position.latitude, position.longitude);
+    Placemark place = placemarks[0];
+    print(_position!.latitude + _position!.latitude);
+    setState(() {
+      name =
+      '${place.locality}, ${place.country}';
+      city = "${place.locality}";
+    });
+  }
+
+  Future<Position> _getUserCurrentLocation() async {
+
+
+    await Geolocator.requestPermission().then((value) {
+
+    }).onError((error, stackTrace){
+      print(error.toString());
+    });
+
+    return await Geolocator.getCurrentPosition();
+
+  }
+
   @override
   Widget build(BuildContext context) {
     Size size = MediaQuery.of(context).size; //check the size of device
@@ -83,7 +145,7 @@ class _HomePageState extends State<HomePage> {
       ),
       extendBody: true,
       extendBodyBehindAppBar: true,
-      bottomNavigationBar: buildBottomNavBar(1, size, themeData),
+     // bottomNavigationBar: buildBottomNavBar(1, size, themeData),
       backgroundColor: themeData.backgroundColor,
       body: SafeArea(
         child: ListView(
@@ -134,68 +196,14 @@ class _HomePageState extends State<HomePage> {
                         ),
                       ),
                     ),
-                    Padding(
-                      padding: EdgeInsets.only(
-                        top: size.height * 0.03,
-                        left: size.width * 0.04,
-                        bottom: size.height * 0.025,
-                      ),
-                      child: Row(
-                        children: [
-                          SizedBox(
-                            width: size.width * 0.65,
-                            height: size.height * 0.06,
-                            child: TextField(
-                              //searchbar
-                              style: GoogleFonts.poppins(
-                                color: themeData.primaryColor,
-                              ),
-                              textInputAction: TextInputAction.next,
-                              decoration: InputDecoration(
-                                contentPadding: EdgeInsets.only(
-                                  top: size.height * 0.01,
-                                  left: size.width * 0.04,
-                                  right: size.width * 0.04,
-                                ),
-                                enabledBorder: textFieldBorder(),
-                                focusedBorder: textFieldBorder(),
-                                border: textFieldBorder(),
-                                hintStyle: GoogleFonts.poppins(
-                                  color: themeData.primaryColor,
-                                ),
-                                hintText: 'Search a car',
-                              ),
-                            ),
-                          ),
-                          Padding(
-                            padding: EdgeInsets.only(
-                              left: size.width * 0.025,
-                            ),
-                            child: Container(
-                              height: size.height * 0.06,
-                              width: size.width * 0.14,
-                              decoration: const BoxDecoration(
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(10),
-                                ),
-                                color: Color(0xff3b22a1), //filters bg color
-                              ),
-                              child: Icon(
-                                UniconsLine.sliders_v,
-                                color: Colors.white,
-                                size: size.height * 0.032,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
                   ],
                 ),
               ),
             ),
-            buildTopBrands(size, themeData),
-            buildMostRented(size, themeData),
+            SizedBox(
+              height: size.height * 0.09,
+            ),
+            buildMostRented(size, themeData, name, city),
           ],
         ),
       ),
