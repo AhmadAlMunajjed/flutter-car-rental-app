@@ -36,6 +36,22 @@ dependencies:
   cloud_firestore: ^3.1.17
   firebase_auth: ^3.3.19
   fluttertoast: ^8.0.9
+  image_picker: ^0.8.5+3
+  firebase_core: ^1.10.0
+  firebase_storage: ^10.2.5
+  google_maps_flutter: ^2.1.1
+  custom_info_window: ^1.0.1
+  geolocator: ^8.0.5
+  flutter_geocoder: ^0.2.2-nullsafety
+  geocoding: ^2.0.4
+  location:
+  map_launcher: ^2.1.1
+  shared_preferences:
+  intl: 0.17.0
+  firebase_messaging: 11.1.0
+  flutter_local_notifications: 5.0.0+4
+  share_plus:
+  photo_view: ^0.14.0
 
 dev_dependencies:
   flutter_test:
@@ -70,7 +86,8 @@ flutter:
     - assets/images/i30n.png
     - assets/images/golf.png
     - assets/images/yaris.png
-    
+    - assets/images/logo.png
+
 
 
   # An image asset can refer to one or more resolution-specific "variants", see

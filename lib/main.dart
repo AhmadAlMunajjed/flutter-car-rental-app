@@ -1,6 +1,7 @@
 import 'package:car_rental_app_ui/data/themes_data.dart';
 import 'package:car_rental_app_ui/pages/home_page.dart';
 import 'package:car_rental_app_ui/pages/login_screen.dart';
+import 'package:car_rental_app_ui/pages/splash_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:car_rental_app_ui/pages/home_screen.dart';
@@ -27,7 +28,7 @@ class _AppState extends State<App> {
       transitionDuration: const Duration(milliseconds: 500),
       debugShowCheckedModeBanner: false,
       title: 'Car Rental App',
-      home: const LoginScreen(),
+      home: const SplashScreen2(),
       theme: lightModeTheme,
       darkTheme: darkModeTheme,
     );

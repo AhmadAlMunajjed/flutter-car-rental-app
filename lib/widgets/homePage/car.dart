@@ -1,3 +1,4 @@
+/*
 import 'dart:math';
 
 import 'package:car_rental_app_ui/data/cars.dart';
@@ -7,7 +8,7 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:unicons/unicons.dart';
 
-Padding buildCar(int i, Size size, ThemeData themeData) {
+Padding buildCar(int i, Size size, ThemeData themeData, String name, String city) {
   return Padding(
     padding: EdgeInsets.only(
       right: size.width * 0.03,
@@ -40,7 +41,8 @@ Padding buildCar(int i, Size size, ThemeData themeData) {
                   bags: cars[i]['bags'],
                   carPrice: cars[i]['carPrice'],
                   carRating: cars[i]['carRating'],
-                  isRotated: cars[i]['isRotated'],
+                  locationName: name,
+                  city: city,
                 ));
               },
               child: Column(
@@ -147,3 +149,4 @@ Padding buildCar(int i, Size size, ThemeData themeData) {
     ),
   );
 }
+*/

@@ -1,22 +1,122 @@
+import 'package:car_rental_app_ui/model/user_chat.dart';
+import 'package:car_rental_app_ui/pages/chat_screen/chat_page.dart';
+import 'package:car_rental_app_ui/pages/chat_screen/chat_screen.dart';
 import 'package:car_rental_app_ui/widgets/bottom_nav_bar.dart';
 
 import 'package:car_rental_app_ui/widgets/homePage/most_rented.dart';
 import 'package:car_rental_app_ui/widgets/homePage/top_brands.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-
+import 'package:geocoding/geocoding.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:unicons/unicons.dart';
 
-class HomePage extends StatefulWidget {
-  const HomePage({Key? key}) : super(key: key);
+class HomePage extends StatefulWidget  {
+final String currentid;
+  const HomePage({Key? key, required this.currentid}) : super(key: key);
 
   @override
   _HomePageState createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
+  bool? serviceEnabled;
+  Position? _position;
+  String name = "";
+  String city = "";
+  var chatDocId;
+
+  SharedPreferences? prefs;
+  readLocal() async {
+    prefs = await SharedPreferences.getInstance();
+    chatDocId = prefs?.getString('id') ?? '';
+    setState(() {});
+  }
+  CollectionReference chats = FirebaseFirestore.instance.collection('chats');
+  void checkUser() async {
+    await chats
+        .limit(1)
+        .get()
+        .then(
+          (QuerySnapshot querySnapshot) async {
+        if (querySnapshot.docs.isNotEmpty) {
+          setState(() {
+            chatDocId = querySnapshot.docs.single.id;
+          });
+
+          print(chatDocId);
+        } else {
+
+        }
+      },
+    )
+        .catchError((error) {});
+  }
+  @override
+  void initState() {
+    serviceEnabled = true;
+    _determinePosition();
+    readLocal();
+    super.initState();
+  }
+  Future<Position?> _determinePosition() async {
+
+    LocationPermission permission;
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled!) {
+      return Future.error("Location Services are Disabled!");
+    }
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        return Future.error("Location Permissions are Denied!");
+      }
+    }
+    if (permission == LocationPermission.deniedForever) {
+      return Future.error(
+          "Location Permissions are permanently denied, we cannot Request permission.");
+    }
+    await Geolocator.getCurrentPosition().then((Position position) {
+      setState(() {
+        _position = position;
+      });
+      _getAddressfromLatlang(_position!);
+    });
+  }
+  Future<void> _getAddressfromLatlang(Position position) async {
+    List<Placemark> placemarks =
+    await placemarkFromCoordinates(position.latitude, position.longitude);
+    Placemark place = placemarks[0];
+    print(_position!.latitude + _position!.latitude);
+    setState(() {
+      name =
+      '${place.locality}, ${place.country}';
+      city = "${place.locality}";
+    });
+  }
+
+
+
+  Future<Position> _getUserCurrentLocation() async {
+
+
+    await Geolocator.requestPermission().then((value) {
+
+    }).onError((error, stackTrace){
+      print(error.toString());
+    });
+
+    return await Geolocator.getCurrentPosition();
+
+  }
+
   @override
   Widget build(BuildContext context) {
+
     Size size = MediaQuery.of(context).size; //check the size of device
     ThemeData themeData = Theme.of(context);
     return Scaffold(
@@ -56,34 +156,24 @@ class _HomePageState extends State<HomePage> {
           ),
           centerTitle: true,
           actions: <Widget>[
-            Padding(
-              padding: EdgeInsets.only(
-                right: size.width * 0.05,
+            IconButton(
+              icon: Icon(
+                UniconsLine.message,
+                color: themeData.secondaryHeaderColor,
+                size: size.height * 0.025,
               ),
-              child: SizedBox(
-                height: size.width * 0.1,
-                width: size.width * 0.1,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: themeData.backgroundColor.withOpacity(0.03),
-                    borderRadius: const BorderRadius.all(
-                      Radius.circular(10),
-                    ),
-                  ),
-                  child: Icon(
-                    UniconsLine.search,
-                    color: themeData.secondaryHeaderColor,
-                    size: size.height * 0.025,
-                  ),
-                ),
-              ),
+              onPressed: (){
+                print(widget.currentid);
+                Navigator.push(context, MaterialPageRoute(builder: (context) =>  ChatList(currentUserId: widget.currentid)));
+              },
             ),
+
           ],
         ),
       ),
       extendBody: true,
       extendBodyBehindAppBar: true,
-      bottomNavigationBar: buildBottomNavBar(1, size, themeData),
+      // bottomNavigationBar: buildBottomNavBar(1, size, themeData),
       backgroundColor: themeData.backgroundColor,
       body: SafeArea(
         child: ListView(
@@ -134,68 +224,14 @@ class _HomePageState extends State<HomePage> {
                         ),
                       ),
                     ),
-                    Padding(
-                      padding: EdgeInsets.only(
-                        top: size.height * 0.03,
-                        left: size.width * 0.04,
-                        bottom: size.height * 0.025,
-                      ),
-                      child: Row(
-                        children: [
-                          SizedBox(
-                            width: size.width * 0.65,
-                            height: size.height * 0.06,
-                            child: TextField(
-                              //searchbar
-                              style: GoogleFonts.poppins(
-                                color: themeData.primaryColor,
-                              ),
-                              textInputAction: TextInputAction.next,
-                              decoration: InputDecoration(
-                                contentPadding: EdgeInsets.only(
-                                  top: size.height * 0.01,
-                                  left: size.width * 0.04,
-                                  right: size.width * 0.04,
-                                ),
-                                enabledBorder: textFieldBorder(),
-                                focusedBorder: textFieldBorder(),
-                                border: textFieldBorder(),
-                                hintStyle: GoogleFonts.poppins(
-                                  color: themeData.primaryColor,
-                                ),
-                                hintText: 'Search a car',
-                              ),
-                            ),
-                          ),
-                          Padding(
-                            padding: EdgeInsets.only(
-                              left: size.width * 0.025,
-                            ),
-                            child: Container(
-                              height: size.height * 0.06,
-                              width: size.width * 0.14,
-                              decoration: const BoxDecoration(
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(10),
-                                ),
-                                color: Color(0xff3b22a1), //filters bg color
-                              ),
-                              child: Icon(
-                                UniconsLine.sliders_v,
-                                color: Colors.white,
-                                size: size.height * 0.032,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
                   ],
                 ),
               ),
             ),
-            buildTopBrands(size, themeData),
-            buildMostRented(size, themeData),
+            SizedBox(
+              height: size.height * 0.09,
+            ),
+            buildMostRented(size, themeData, name, city),
           ],
         ),
       ),

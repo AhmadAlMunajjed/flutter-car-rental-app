@@ -1,7 +1,9 @@
+import 'package:car_rental_app_ui/pages/car_list_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-Row buildCategory(String text, size, ThemeData themeData) {
+Row buildCategory(String text, size, ThemeData themeData ) {
   return Row(
     mainAxisAlignment: MainAxisAlignment.spaceBetween,
     children: [
@@ -25,14 +27,19 @@ Row buildCategory(String text, size, ThemeData themeData) {
           top: size.height * 0.03,
           right: size.width * 0.05,
         ),
-        child: Text(
-          'View All',
-          textAlign: TextAlign.center,
-          style: GoogleFonts.poppins(
-            color: themeData.primaryColor.withOpacity(0.8),
-            fontSize: size.width * 0.04,
+        child: TextButton(
+          onPressed: (){
+         Get.to(const CarListScreen());
+          },
+          child: Text(
+            'View All',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.poppins(
+              color: themeData.primaryColor.withOpacity(0.8),
+              fontSize: size.width * 0.04,
+            ),
           ),
-        ),
+        )
       ),
     ],
   );
