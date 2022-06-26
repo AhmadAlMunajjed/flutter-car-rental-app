@@ -1,9 +1,14 @@
+import 'package:car_rental_app_ui/model/user_chat.dart';
+import 'package:car_rental_app_ui/pages/Admin_login/admin_login.dart';
 import 'package:car_rental_app_ui/pages/home_page.dart';
 import 'package:car_rental_app_ui/pages/home_screen.dart';
 import 'package:car_rental_app_ui/pages/registration_screen.dart';
+import 'package:car_rental_app_ui/widgets/bottom_nav_bar.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -15,7 +20,8 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   // form key
   final _formKey = GlobalKey<FormState>();
-
+  SharedPreferences? prefs;
+  User? currentUser;
   // editing controller
   final TextEditingController emailController = new TextEditingController();
   final TextEditingController passwordController = new TextEditingController();
@@ -49,14 +55,14 @@ class _LoginScreenState extends State<LoginScreen> {
         },
         textInputAction: TextInputAction.next,
         decoration: InputDecoration(
-          prefixIcon: Icon(Icons.mail),
-          contentPadding: EdgeInsets.fromLTRB(20, 15, 20, 15),
+          prefixIcon: const Icon(Icons.mail),
+          contentPadding: const EdgeInsets.fromLTRB(20, 15, 20, 15),
           hintText: "Email",
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
           ),
         ));
-
+    ThemeData theme = Theme.of(context);
     //password field
     final passwordField = TextFormField(
         autofocus: false,
@@ -76,8 +82,8 @@ class _LoginScreenState extends State<LoginScreen> {
         },
         textInputAction: TextInputAction.done,
         decoration: InputDecoration(
-          prefixIcon: Icon(Icons.vpn_key),
-          contentPadding: EdgeInsets.fromLTRB(20, 15, 20, 15),
+          prefixIcon: const Icon(Icons.vpn_key),
+          contentPadding: const EdgeInsets.fromLTRB(20, 15, 20, 15),
           hintText: "Password",
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
@@ -87,17 +93,17 @@ class _LoginScreenState extends State<LoginScreen> {
     final loginButton = Material(
       elevation: 5,
       borderRadius: BorderRadius.circular(30),
-      color: Colors.redAccent,
+      color: theme.secondaryHeaderColor,
       child: MaterialButton(
-          padding: EdgeInsets.fromLTRB(20, 15, 20, 15),
+          padding: const EdgeInsets.fromLTRB(20, 15, 20, 15),
           minWidth: MediaQuery.of(context).size.width,
           onPressed: () {
             signIn(emailController.text, passwordController.text);
           },
-          child: Text(
+          child: const Text(
             "Login",
             textAlign: TextAlign.center,
-            style: TextStyle(
+            style: const TextStyle(
                 fontSize: 20, color: Colors.white, fontWeight: FontWeight.bold),
           )),
     );
@@ -119,37 +125,50 @@ class _LoginScreenState extends State<LoginScreen> {
                     SizedBox(
                         height: 200,
                         child: Image.asset(
-                          "assets/images/logo.png",
+                          "assets/icons/SobGOGdark.png",
                           fit: BoxFit.contain,
                         )),
-                    SizedBox(height: 45),
+
+
+                    const SizedBox(height: 45),
                     emailField,
-                    SizedBox(height: 25),
+                    const SizedBox(height: 25),
                     passwordField,
-                    SizedBox(height: 35),
+                    const SizedBox(height: 35),
                     loginButton,
-                    SizedBox(height: 15),
+                    const SizedBox(height: 15),
                     Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: <Widget>[
-                          Text("Don't have an account? "),
+                          const Text("Don't have an account? "),
                           GestureDetector(
                             onTap: () {
                               Navigator.push(
                                   context,
                                   MaterialPageRoute(
                                       builder: (context) =>
-                                          RegistrationScreen()));
+                                          const RegistrationScreen()));
                             },
-                            child: Text(
+                            child:  Text(
                               "SignUp",
                               style: TextStyle(
-                                  color: Colors.redAccent,
+                                  color: theme.secondaryHeaderColor,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 15),
                             ),
                           )
-                        ])
+                        ]),
+                    const SizedBox(height: 20,),
+                    TextButton(onPressed: () {
+                      Navigator.push(context,  MaterialPageRoute(builder: (context) => const AdminLogin()));
+
+                    }, child:  Text(
+                      "Admin Login",
+                      style:  TextStyle(
+                          color: theme.secondaryHeaderColor,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20),
+                    ),)
                   ],
                 ),
               ),
@@ -165,12 +184,35 @@ class _LoginScreenState extends State<LoginScreen> {
     if (_formKey.currentState!.validate()) {
       try {
         await _auth
-            .signInWithEmailAndPassword(email: email, password: password)
-            .then((uid) => {
-                  Fluttertoast.showToast(msg: "Login Successful"),
-                  Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(builder: (context) => HomePage())),
-                });
+            .signInWithEmailAndPassword(email: email, password: password);
+        final QuerySnapshot result =
+        await FirebaseFirestore.instance.collection('users').where('id', isEqualTo: _auth.currentUser!.uid).get();
+        final List<DocumentSnapshot> documents = result.docs;
+        if (documents.isEmpty) {
+          // Update data to server if new user
+          FirebaseFirestore.instance.collection('users').doc(_auth.currentUser!.uid).set({
+           // 'nickname': "Admin",
+            "email": emailController.text,
+            'id': _auth.currentUser!.uid,
+            'createdAt': DateTime.now().millisecondsSinceEpoch.toString(),
+            'chattingWith': null
+          });
+
+          // Write data to local
+          currentUser = _auth.currentUser;
+          await prefs?.setString('id', currentUser!.uid);
+        //  await prefs?.setString('nickname',"Admin");
+        } else {
+          DocumentSnapshot documentSnapshot = documents[0];
+          UserChat userChat = UserChat.fromDocument(documentSnapshot);
+          // Write data to local
+          await prefs?.setString('id', userChat.id);
+       //   await prefs?.setString('nickname', userChat.nickname);
+
+        }
+        Fluttertoast.showToast(msg: "Sign in success");
+        Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => BottomNavigation(curentid: _auth.currentUser!.uid,)), (route) => false);
+
       } on FirebaseAuthException catch (error) {
         switch (error.code) {
           case "invalid-email":
